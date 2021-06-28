@@ -3,9 +3,11 @@
 
 import os
 import logging
-from typing import Dict
+import html
+import json
+import traceback
 
-from telegram import Update
+from telegram import Update, ParseMode
 from telegram.ext import (
     Updater,
     CallbackContext,
@@ -17,10 +19,41 @@ from telegram.ext import (
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    filename=".persistent_data/logs.txt",
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
 
 logger = logging.getLogger(__name__)
+
+
+DEVELOPER_CHAT_ID = os.environ.get("DEVELOPER_CHAT_ID")
+
+
+def error_handler(update: object, context: CallbackContext) -> None:
+    """Log the error and send a telegram message to notify the developer."""
+    # Log the error before we do anything else, so we can see it even if something breaks.
+    logger.error(msg="Exception while handling an update:", exc_info=context.error)
+
+    # traceback.format_exception returns the usual python message about an exception, but as a
+    # list of strings rather than a single string, so we have to join them together.
+    tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+    tb_string = ''.join(tb_list)
+
+    # Build the message with some markup and additional information about what happened.
+    # You might need to add some logic to deal with messages longer than the 4096 character limit.
+    update_str = update.to_dict() if isinstance(update, Update) else str(update)
+    message = (
+        f'An exception was raised while handling an update\n'
+        f'<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}'
+        '</pre>\n\n'
+        f'<pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n'
+        f'<pre>context.user_data = {html.escape(str(context.user_data))}</pre>\n\n'
+        f'<pre>{html.escape(tb_string)}</pre>'
+    )
+
+    # Finally, send the message
+    context.bot.send_message(chat_id=DEVELOPER_CHAT_ID, text=message, parse_mode=ParseMode.HTML)
 
 
 def __set_or_update_amount_of_messages__(user_data: dict) -> dict:
@@ -48,7 +81,6 @@ def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("5 - 10")
     update.message.reply_text("4 * 5")
     update.message.reply_text("9 / 2")
-    update.message.reply_text(str(context.user_data))
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
@@ -61,26 +93,31 @@ def info(update: Update, context: CallbackContext) -> None:
 
 def process_calculation(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /process_calculation is issued."""
+    shall_raise_error = False
     message_received = update.message.text
 
     logger.info(F"process_calculation command. message received: {message_received}")
     try:
         result = eval(message_received)
     except SyntaxError as e:
-        logger.warn(F"Exxception (SyntaxError). message received: {message_received}")
+        logger.warning(F"Exception (SyntaxError). message received: {message_received}")
         result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente"
+        shall_raise_error = True
     except Exception as e:
-        logger.warn(F"Exception (general). message received: {message_received}")
+        logger.warning(F"Exception (general). message received: {message_received}")
         result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente"
+        shall_raise_error = True
 
     update.message.reply_text(result)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
+    if shall_raise_error:
+        raise Exception(F"Error with message: {message_received}")
 
 
 def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
-    persistence = PicklePersistence(filename='.persistent_data')
+    persistence = PicklePersistence(filename='.persistent_data/user_data')
     token = os.environ.get("TOKEN")
     updater = Updater(token, persistence=persistence)
 
@@ -92,6 +129,8 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("info", info))
 
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, process_calculation))
+
+    dispatcher.add_error_handler(error_handler)
 
     # Start the Bot
     updater.start_polling()

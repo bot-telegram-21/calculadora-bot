@@ -132,4 +132,4 @@ dmypy.json
 *.DS_Store
 
 # Persistent data
-.persistent_data
+.persistent_data/
