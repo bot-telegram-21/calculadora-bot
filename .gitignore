@@ -130,3 +130,6 @@ dmypy.json
 
 # MAC hidden files
 *.DS_Store
+
+# Persistent data
+.persistent_data

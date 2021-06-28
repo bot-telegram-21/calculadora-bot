@@ -6,7 +6,14 @@ import logging
 from typing import Dict
 
 from telegram import Update
-from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
+from telegram.ext import (
+    Updater,
+    CallbackContext,
+    CommandHandler,
+    MessageHandler,
+    Filters,
+    PicklePersistence,
+)
 
 # Enable logging
 logging.basicConfig(
@@ -73,8 +80,9 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
 def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
+    persistence = PicklePersistence(filename='.persistent_data')
     token = os.environ.get("TOKEN")
-    updater = Updater(token)
+    updater = Updater(token, persistence=persistence)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
