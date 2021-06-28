@@ -16,10 +16,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def __set_or_update_amount_of_messages__(context: CallbackContext) -> CallbackContext:
+    if "amount_of_messages" in context.user_data.keys():
+        context.user_data["amount_of_messages"] += 1
+    else:
+        context.user_data["amount_of_messages"] = 0
+    return context.user_data
+
+
 def start(update: Update, context: CallbackContext) -> None:
     """Start the conversation and ask user for input."""
     logger.info("Started bot")
-    update.message.reply_text("Olá, eu sou um bot-calculadora!")
+    user = update.effective_user
+    update.message.reply_markdown_v2(fr"Olá, {user.mention_markdown_v2()}\!"
+        fr" Eu sou um robô calculadora\!")
+    context.user_data.update(__set_or_update_amount_of_messages__(context))
 
 
 def help_command(update: Update, context: CallbackContext) -> None:
@@ -30,6 +41,15 @@ def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("5 - 10")
     update.message.reply_text("4 * 5")
     update.message.reply_text("9 / 2")
+    update.message.reply_text(str(context.user_data))
+    context.user_data.update(__set_or_update_amount_of_messages__(context))
+
+
+def info(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /info is issued."""
+    logger.info("Bot information")
+    update.message.reply_text(context.user_data)
+    context.user_data.update(__set_or_update_amount_of_messages__(context))
 
 
 def process_calculation(update: Update, context: CallbackContext) -> None:
@@ -47,6 +67,7 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
         result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente"
 
     update.message.reply_text(result)
+    context.user_data.update(__set_or_update_amount_of_messages__(context))
 
 
 def main() -> None:
@@ -60,6 +81,7 @@ def main() -> None:
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("info", info))
 
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, process_calculation))
 
