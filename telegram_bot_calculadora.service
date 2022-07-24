@@ -1,0 +1,14 @@
+[Unit]
+Description=Telegram bot - calculadora
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 -u calculadora_bot.py
+WorkingDirectory=/home/pi/git/calculadora-bot
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
