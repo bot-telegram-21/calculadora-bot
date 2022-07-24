@@ -99,6 +99,7 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
     logger.info(F"process_calculation command. message received: {message_received}")
     try:
         result = eval(message_received)
+        logger.info(F"command result: {result}")
     except SyntaxError as e:
         logger.warning(F"Exception (SyntaxError). message received: {message_received}")
         result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente ou digitar \ajuda"
