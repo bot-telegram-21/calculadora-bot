@@ -101,11 +101,11 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
         result = eval(message_received)
     except SyntaxError as e:
         logger.warning(F"Exception (SyntaxError). message received: {message_received}")
-        result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente"
+        result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente ou digitar \ajuda"
         shall_raise_error = True
     except Exception as e:
         logger.warning(F"Exception (general). message received: {message_received}")
-        result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente"
+        result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente ou digitar \ajuda"
         shall_raise_error = True
 
     update.message.reply_text(result)
@@ -126,6 +126,7 @@ def main() -> None:
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("ajuda", help_command))
     dispatcher.add_handler(CommandHandler("info", info))
 
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, process_calculation))
