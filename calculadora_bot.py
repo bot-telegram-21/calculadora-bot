@@ -19,14 +19,16 @@ from telegram.ext import (
 
 # Enable logging
 logging.basicConfig(
-    filename=".persistent_data/logs.txt",
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
+# Rotate logger file daily
 logger = logging.getLogger(__name__)
+logger_handler = logging.handlers.TimedRotatingFileHandler(".persistent_data/logs.txt", 'midnight', 1)
+logger.addHandler(logger_handler)
 
-
+# Get developer chat ID to report calculations that didn't work
 DEVELOPER_CHAT_ID = os.environ.get("DEVELOPER_CHAT_ID")
 
 
@@ -68,8 +70,10 @@ def start(update: Update, context: CallbackContext) -> None:
     """Start the conversation and ask user for input."""
     logger.info("Started bot")
     user = update.effective_user
-    update.message.reply_markdown_v2(fr"Olá, {user.mention_markdown_v2()}\!"
-        fr" Eu sou um robô calculadora\!")
+    update.message.reply_markdown_v2(
+        fr"Olá, {user.mention_markdown_v2()}\!"
+        fr" Eu sou um robô calculadora\!"
+    )
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
