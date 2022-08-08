@@ -91,28 +91,54 @@ def info(update: Update, context: CallbackContext) -> None:
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
+def pre_process_calculation(message_received: str) -> str:
+    """Remove common mistakes on typing expressions"""
+    new_message = message_received.replace(",", ".")
+    new_message = new_message.replace("x", "*")
+
+    new_message = new_message.replace("de", "")
+    new_message = new_message.replace("por", "")
+
+    new_message = new_message.replace("mais", "+")
+    new_message = new_message.replace("com", "+")
+    new_message = new_message.replace("e", "+")
+
+    new_message = new_message.replace("menos", "-")
+
+    new_message = new_message.replace("vezes", "*")
+    new_message = new_message.replace("multiplicado", "*")
+
+    new_message = new_message.replace("sobre", "/")
+    new_message = new_message.replace("dividido", "/")
+    return new_message
+
+
 def process_calculation(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /process_calculation is issued."""
     shall_raise_error = False
-    message_received = update.message.text
+    if update.message is None:
+        return
 
-    logger.info(F"process_calculation command. message received: {message_received}")
+    message_received = update.message.text
+    expression = pre_process_calculation(message_received)
+
+    logger.info(F"process_calculation command. message received: {expression}")
     try:
-        result = eval(message_received)
+        result = eval(expression)
         logger.info(F"command result: {result}")
     except SyntaxError as e:
-        logger.warning(F"Exception (SyntaxError). message received: {message_received}")
-        result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente ou digitar \ajuda"
+        logger.warning(F"Exception (SyntaxError). message received: {expression}")
+        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \ajuda"
         shall_raise_error = True
     except Exception as e:
-        logger.warning(F"Exception (general). message received: {message_received}")
-        result = F"não entendi a expressão '{message_received}'. Você pode tentar novamente ou digitar \ajuda"
+        logger.warning(F"Exception (general). message received: {expression}")
+        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \ajuda"
         shall_raise_error = True
 
     update.message.reply_text(result)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
-        raise Exception(F"Error with message: {message_received}")
+        raise Exception(F"Error with message: '{message_received}'\n\n translated to '{expression}'")
 
 
 def main() -> None:

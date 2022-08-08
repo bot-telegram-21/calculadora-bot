@@ -133,3 +133,6 @@ dmypy.json
 
 # Persistent data
 .persistent_data/
+
+# PyCharm
+.idea
