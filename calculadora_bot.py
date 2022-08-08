@@ -128,11 +128,11 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
         logger.info(F"command result: {result}")
     except SyntaxError as e:
         logger.warning(F"Exception (SyntaxError). message received: {expression}")
-        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \ajuda"
+        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \\ajuda"
         shall_raise_error = True
     except Exception as e:
         logger.warning(F"Exception (general). message received: {expression}")
-        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \ajuda"
+        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \\ajuda"
         shall_raise_error = True
 
     update.message.reply_text(result)
