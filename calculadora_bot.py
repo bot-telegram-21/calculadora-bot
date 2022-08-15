@@ -98,7 +98,6 @@ def info(update: Update, context: CallbackContext) -> None:
 def pre_process_calculation(message_received: str) -> str:
     """Remove common mistakes on typing expressions"""
     new_message = message_received.replace(",", ".")
-    new_message = new_message.replace("x", "*")
 
     new_message = new_message.replace("de", "")
     new_message = new_message.replace("por", "")
@@ -111,9 +110,11 @@ def pre_process_calculation(message_received: str) -> str:
 
     new_message = new_message.replace("vezes", "*")
     new_message = new_message.replace("multiplicado", "*")
+    new_message = new_message.replace("x", "*")
 
     new_message = new_message.replace("sobre", "/")
     new_message = new_message.replace("dividido", "/")
+    new_message = new_message.replace(":", "/")
     return new_message
 
 
