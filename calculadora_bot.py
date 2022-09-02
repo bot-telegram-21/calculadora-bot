@@ -25,7 +25,11 @@ logging.basicConfig(
 
 # Rotate logger file daily
 logger = logging.getLogger(__name__)
-logger_handler = logging.handlers.TimedRotatingFileHandler(".persistent_data/logs.txt", 'midnight', 1)
+logger_handler = logging.handlers.TimedRotatingFileHandler(
+    ".persistent_data/logs.txt",
+    'midnight',
+    1
+)
 logger.addHandler(logger_handler)
 
 # Get developer chat ID to report calculations that didn't work
@@ -34,28 +38,38 @@ DEVELOPER_CHAT_ID = os.environ.get("DEVELOPER_CHAT_ID")
 
 def error_handler(update: object, context: CallbackContext) -> None:
     """Log the error and send a telegram message to notify the developer."""
-    # Log the error before we do anything else, so we can see it even if something breaks.
+    # Log the error before we do anything else, so we can see it even if something
+    # breaks
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
-    # traceback.format_exception returns the usual python message about an exception, but as a
-    # list of strings rather than a single string, so we have to join them together.
-    tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+    # traceback.format_exception returns the usual python message about an exception,
+    # but as a list of strings rather than a single string, so we have to join them
+    # together.
+    tb_list = traceback.format_exception(None, context.error,
+                                         context.error.__traceback__)
     tb_string = ''.join(tb_list)
 
     # Build the message with some markup and additional information about what happened.
-    # You might need to add some logic to deal with messages longer than the 4096 character limit.
+    # You might need to add some logic to deal with messages longer than the 4096-
+    # character limit.
     update_str = update.to_dict() if isinstance(update, Update) else str(update)
     message = (
-        f'An exception was raised while handling an update\n'
-        f'<pre>update = {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}'
-        '</pre>\n\n'
-        f'<pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n'
-        f'<pre>context.user_data = {html.escape(str(context.user_data))}</pre>\n\n'
-        f'<pre>{html.escape(tb_string)}</pre>'
+        f"""
+        An exception was raised while handling an update\n
+        <pre>update = 
+        {html.escape(json.dumps(update_str, indent=2, ensure_ascii=False))}
+        </pre>\n\n
+        <pre>context.chat_data = {html.escape(str(context.chat_data))}</pre>\n\n
+        <pre>context.user_data = {html.escape(str(context.user_data))}</pre>\n\n
+        <pre>{html.escape(tb_string)}</pre>"""
     )
 
     # Finally, send the message
-    context.bot.send_message(chat_id=DEVELOPER_CHAT_ID, text=message, parse_mode=ParseMode.HTML)
+    context.bot.send_message(
+        chat_id=DEVELOPER_CHAT_ID,
+        text=message,
+        parse_mode=ParseMode.HTML
+    )
 
 
 def __set_or_update_amount_of_messages__(user_data: dict) -> dict:
@@ -80,7 +94,9 @@ def start(update: Update, context: CallbackContext) -> None:
 def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     logger.info("help command")
-    update.message.reply_text("Digite a operação que você deseja fazer e eu te direi o resultado. Exemplos:")
+    update.message.reply_text(
+        "Digite a operação que você deseja fazer e eu te direi o resultado. Exemplos:"
+    )
     update.message.reply_text("3 + 4")
     update.message.reply_text("5 - 10")
     update.message.reply_text("4 * 5")
@@ -131,19 +147,27 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
     try:
         result = eval(expression)
         logger.info(F"command result: {result}")
-    except SyntaxError as e:
+    except SyntaxError:
         logger.warning(F"Exception (SyntaxError). message received: {expression}")
-        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \\ajuda"
+        result = F"""
+        não entendi a expressão '{expression}'.
+        Você pode tentar novamente ou digitar \\ajuda
+        """
         shall_raise_error = True
-    except Exception as e:
+    except Exception:
         logger.warning(F"Exception (general). message received: {expression}")
-        result = F"não entendi a expressão '{expression}'. Você pode tentar novamente ou digitar \\ajuda"
+        result = F"""
+        não entendi a expressão '{expression}'.
+        Você pode tentar novamente ou digitar \\ajuda
+        """
         shall_raise_error = True
 
     update.message.reply_text(result)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
-        raise Exception(F"Error with message: '{message_received}'\n\n translated to '{expression}'")
+        raise Exception(
+            F"Error with message: '{message_received}'\n\n translated to '{expression}'"
+        )
 
 
 def main() -> None:
@@ -161,7 +185,8 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("ajuda", help_command))
     dispatcher.add_handler(CommandHandler("info", info))
 
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, process_calculation))
+    dispatcher.add_handler(
+        MessageHandler(Filters.text & ~Filters.command, process_calculation))
 
     dispatcher.add_error_handler(error_handler)
 
