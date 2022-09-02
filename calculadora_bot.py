@@ -6,6 +6,7 @@ import logging
 import html
 import json
 import traceback
+from typing import List
 
 from telegram import Update, ParseMode
 from telegram.ext import (
@@ -111,7 +112,7 @@ def info(update: Update, context: CallbackContext) -> None:
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
-def pre_process_calculation(message_received: str) -> str:
+def pre_process_calculation(message_received: str) -> List[str]:
     """Remove common mistakes on typing expressions"""
     new_message = message_received.replace(",", ".")
 
@@ -131,6 +132,8 @@ def pre_process_calculation(message_received: str) -> str:
     new_message = new_message.replace("sobre", "/")
     new_message = new_message.replace("dividido", "/")
     new_message = new_message.replace(":", "/")
+
+    new_message = new_message.split("\n")
     return new_message
 
 
@@ -145,28 +148,31 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
 
     logger.info(F"process_calculation command. message received: {expression}")
     try:
-        result = eval(expression)
-        logger.info(F"command result: {result}")
+        results = [eval(exp) for exp in expression]
+        logger.info(F"command result: {results}")
     except SyntaxError:
         logger.warning(F"Exception (SyntaxError). message received: {expression}")
-        result = F"""
+        results = F"""
         não entendi a expressão '{expression}'.
         Você pode tentar novamente ou digitar \\ajuda
         """
         shall_raise_error = True
     except Exception:
         logger.warning(F"Exception (general). message received: {expression}")
-        result = F"""
+        results = F"""
         não entendi a expressão '{expression}'.
         Você pode tentar novamente ou digitar \\ajuda
         """
         shall_raise_error = True
 
-    update.message.reply_text(result)
+    for result in results:
+        update.message.reply_text(result)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
         raise Exception(
-            F"Error with message: '{message_received}'\n\n translated to '{expression}'"
+            F"Error with message:\n"
+            F"'{message_received}'\n\n translated to "
+            F"'{expression}'"
         )
 
 
