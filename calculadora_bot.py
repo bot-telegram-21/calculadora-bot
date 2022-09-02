@@ -128,10 +128,12 @@ def pre_process_calculation(message_received: str) -> List[str]:
     new_message = new_message.replace("vezes", "*")
     new_message = new_message.replace("multiplicado", "*")
     new_message = new_message.replace("x", "*")
+    new_message = new_message.replace("×", "*")
 
     new_message = new_message.replace("sobre", "/")
     new_message = new_message.replace("dividido", "/")
     new_message = new_message.replace(":", "/")
+    new_message = new_message.replace("÷", "/")
 
     new_message = new_message.split("\n")
     return new_message
@@ -166,7 +168,8 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
         shall_raise_error = True
 
     for result in results:
-        update.message.reply_text(result)
+        formatted_result = f"{result:_}".replace(".", ",").replace("_", ".")
+        update.message.reply_text(formatted_result)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
         raise Exception(
