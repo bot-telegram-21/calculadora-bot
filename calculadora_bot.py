@@ -136,7 +136,13 @@ def info(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(context.user_data)
     user_id = _get_user_id(update)
     if user_id == DEVELOPER_CHAT_ID:
-        update.message.reply_text(logs_db.get_stats())
+        update.message.reply_text(
+            json.dumps(
+                logs_db.get_stats(),
+                indent=2,
+                ensure_ascii=False
+            )
+        )
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
