@@ -74,12 +74,12 @@ class LogsDB:
         return self.total_messages_db.all()[0]["good_expressions"]
 
     def _get_error_expression(self) -> int:
-        return self.total_messages_db.all()[0]["error_expression"]
+        return self.total_messages_db.all()[0]["error_expressions"]
 
     def get_stats(self):
         return {
             "total_users": self._get_total_users(),
             "total_messages": self._get_total_messages(),
             "good_expressions": self._get_good_expressions(),
-            "error_expression": self._get_error_expression(),
+            "error_expressions": self._get_error_expression(),
         }
