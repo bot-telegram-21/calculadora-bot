@@ -18,6 +18,10 @@ from telegram.ext import (
     PicklePersistence,
 )
 
+from logs_db import LogsDB
+
+PERSISTENT_DATA_PATH = ".persistent_data"
+
 # Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,11 +31,14 @@ logging.basicConfig(
 # Rotate logger file daily
 logger = logging.getLogger(__name__)
 logger_handler = logging.handlers.TimedRotatingFileHandler(
-    ".persistent_data/logs.txt",
+    f"{PERSISTENT_DATA_PATH}/logs.txt",
     'midnight',
     1
 )
 logger.addHandler(logger_handler)
+
+# Load DB for logs
+logs_db = LogsDB(PERSISTENT_DATA_PATH)
 
 # Get developer chat ID to report calculations that didn't work
 DEVELOPER_CHAT_ID = os.environ.get("DEVELOPER_CHAT_ID")
@@ -72,6 +79,13 @@ def error_handler(update: object, context: CallbackContext) -> None:
         parse_mode=ParseMode.HTML
     )
 
+    # Log info on DB
+    log_content = update_str
+    if isinstance(update_str, str):
+        log_content = json.loads(update_str)
+    expression = log_content.get("message", {}).get("text", "")
+    logs_db.add_error_expression(expression)
+
 
 def __set_or_update_amount_of_messages__(user_data: dict) -> dict:
     if "amount_of_messages" in user_data.keys():
@@ -79,6 +93,15 @@ def __set_or_update_amount_of_messages__(user_data: dict) -> dict:
     else:
         user_data["amount_of_messages"] = 0
     return user_data
+
+
+def _get_user_id(update: Update):
+    update_str = update.to_dict() if isinstance(update, Update) else str(update)
+    log_content = update_str
+    if isinstance(update_str, str):
+        log_content = json.loads(update_str)
+    user_id = str(log_content.get("message", {}).get("from_user", {}).get("id", ""))
+    return user_id
 
 
 def start(update: Update, context: CallbackContext) -> None:
@@ -109,6 +132,9 @@ def info(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /info is issued."""
     logger.info("Bot information")
     update.message.reply_text(context.user_data)
+    user_id = _get_user_id(update)
+    if user_id == DEVELOPER_CHAT_ID:
+        update.message.reply_text(logs_db.get_stats())
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
@@ -177,12 +203,15 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
             F"'{message_received}'\n\n translated to "
             F"'{expression}'"
         )
+    else:
+        user_id = _get_user_id(update)
+        logs_db.add_expression_for_user(user_id, expression, results)
 
 
 def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
-    persistence = PicklePersistence(filename='.persistent_data/user_data')
+    persistence = PicklePersistence(filename=f'{PERSISTENT_DATA_PATH}/user_data')
     token = os.environ.get("TOKEN")
     updater = Updater(token, persistence=persistence)
 
