@@ -101,6 +101,8 @@ def _get_user_id(update: Update):
     if isinstance(update_str, str):
         log_content = json.loads(update_str)
     user_id = str(log_content.get("message", {}).get("from_user", {}).get("id", ""))
+    if len(user_id) < 1:
+        user_id = str(log_content.get("message", {}).get("from", {}).get("id", ""))
     return user_id
 
 
