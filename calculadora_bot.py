@@ -203,6 +203,7 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
 
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
+        update.message.reply_text(results)
         raise Exception(
             F"Error with message:\n"
             F"'{message_received}'\n\n translated to "
