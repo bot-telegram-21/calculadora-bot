@@ -189,14 +189,14 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
     except SyntaxError:
         logger.warning(F"Exception (SyntaxError). message received: {expression}")
         results = F"""
-        não entendi a expressão '{expression}'.
+        não entendi a expressão '{message_received}'.
         Você pode tentar novamente ou digitar \\ajuda
         """
         shall_raise_error = True
     except Exception:
         logger.warning(F"Exception (general). message received: {expression}")
         results = F"""
-        não entendi a expressão '{expression}'.
+        não entendi a expressão '{message_received}'.
         Você pode tentar novamente ou digitar \\ajuda
         """
         shall_raise_error = True
