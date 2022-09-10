@@ -201,9 +201,6 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
         """
         shall_raise_error = True
 
-    for result in results:
-        formatted_result = f"{result:_}".replace(".", ",").replace("_", ".")
-        update.message.reply_text(formatted_result)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
         raise Exception(
@@ -212,6 +209,9 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
             F"'{expression}'"
         )
     else:
+        for result in results:
+            formatted_result = f"{result:_}".replace(".", ",").replace("_", ".")
+            update.message.reply_text(formatted_result)
         user_id = _get_user_id(update)
         logs_db.add_expression_for_user(user_id, expression, results)
 
