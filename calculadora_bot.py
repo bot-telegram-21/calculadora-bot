@@ -123,10 +123,17 @@ def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(
         "Digite a operação que você deseja fazer e eu te direi o resultado. Exemplos:"
     )
-    update.message.reply_text("3 + 4")
-    update.message.reply_text("5 - 10")
-    update.message.reply_text("4 * 5")
-    update.message.reply_text("9 / 2")
+    examples = [
+        "3 + 4",
+        "5 - 10",
+        "4 * 5",
+        "9 / 2",
+        "Para fazer um número elevado a outro, use dois '*', exemplo:",
+        "2 ** 3",
+        "(5 * 2) ** 2",
+    ]
+    for example in examples:
+        update.message.reply_text(example)
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
 
 
