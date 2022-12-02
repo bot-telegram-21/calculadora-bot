@@ -6,7 +6,7 @@ import logging
 import html
 import json
 import traceback
-from typing import List
+from typing import List, Optional
 
 from telegram import Update, ParseMode
 from telegram.ext import (
@@ -42,6 +42,15 @@ logs_db = LogsDB(PERSISTENT_DATA_PATH)
 
 # Get developer chat ID to report calculations that didn't work
 DEVELOPER_CHAT_ID = os.environ.get("DEVELOPER_CHAT_ID")
+
+
+def is_private_chat(update: object) -> Optional[bool]:
+    if isinstance(update, dict):
+        message = update.get("message", {})
+        chat = message.get("chat", {})
+        chat_type = chat.get("type", "")
+        return chat_type == "private"
+    return None
 
 
 def error_handler(update: object, context: CallbackContext) -> None:
@@ -184,6 +193,12 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /process_calculation is issued."""
     shall_raise_error = False
     if update.message is None:
+        return
+
+    if not is_private_chat(update):
+        update.message.reply_text(
+            "a calculadora só funciona em mensagem direta/privada"
+        )
         return
 
     message_received = update.message.text
