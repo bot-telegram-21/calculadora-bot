@@ -21,6 +21,7 @@ from telegram.ext import (
 from logs_db import LogsDB
 
 PERSISTENT_DATA_PATH = ".persistent_data"
+MAX_ERROR_MESSAGES_TO_BLOCK = 15
 
 # Enable logging
 logging.basicConfig(
@@ -51,6 +52,14 @@ def is_private_chat(update: object) -> Optional[bool]:
         chat_type = chat.get("type", "")
         return chat_type == "private"
     return None
+
+
+def is_blocked_user(update) -> bool:
+    user_id = _get_user_id(update)
+    user_info = logs_db.get_user_error_expressions(user_id)
+    if user_info.get("amount_of_error_expressions", 0) > MAX_ERROR_MESSAGES_TO_BLOCK:
+        return True
+    return False
 
 
 def error_handler(update: object, context: CallbackContext) -> None:
@@ -201,6 +210,9 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
         )
         return
 
+    if is_blocked_user(update):
+        return
+
     message_received = update.message.text
     expression = pre_process_calculation(message_received)
 
@@ -226,6 +238,8 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
     context.user_data.update(__set_or_update_amount_of_messages__(context.user_data))
     if shall_raise_error:
         update.message.reply_text(results)
+        user_id = _get_user_id(update)
+        logs_db.add_expression_for_user(user_id, expression, None)
         raise Exception(
             F"Error with message:\n"
             F"'{message_received}'\n\n translated to "

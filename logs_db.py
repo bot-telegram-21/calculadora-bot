@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Dict
 
 from tinydb import TinyDB, Query
 from tinydb.operations import increment
@@ -32,28 +32,61 @@ class LogsDB:
         self,
         user: str,
         expression: Union[str, List[str]],
-        result: Union[str, List[str]],
+        result: Union[str, List[str], None],
     ) -> None:
         current_user_data = self.users_db.get(Query().user_id == user)
-        self._increment_good_expressions()
         self._increment_total_messages()
+        if result:
+            good_expressions = {
+                "expression": expression,
+                "result": result,
+            }
+            error_expressions = {}
+            increment_on_error_amount = 0
+            self._increment_good_expressions()
+        else:
+            good_expressions = {}
+            error_expressions = {
+                "expression": expression,
+            }
+            increment_on_error_amount = 1
+            self._increment_error_expressions()
         if current_user_data is None:
             # That's the first expression for the current user, so create it on DB
             self.users_db.insert({
                 "user_id": user,
                 "num_of_expressions": 1,
-                "expressions": [{
-                    "expression": expression,
-                    "result": result,
-                }]
+                "amount_of_error_expressions": increment_on_error_amount,
+                "good_expressions": [good_expressions],
+                "error_expressions": [error_expressions],
             })
         else:
             # The user already exists, so update their info on DB
             current_user_data["num_of_expressions"] += 1
-            current_user_data["expressions"].append({
-                    "expression": expression,
-                    "result": result,
-                })
+            if result:
+                current_good_expressions = current_user_data.get(
+                    "good_expressions",
+                    current_user_data.get("expressions", [])
+                )
+                current_good_expressions.append(
+                    good_expressions
+                )
+                current_user_data["good_expressions"] = current_good_expressions
+                current_user_data.pop("expressions", None)
+            else:
+                current_error_expressions = current_user_data.get(
+                    "error_expressions", [])
+                current_error_expressions.append(
+                    error_expressions
+                )
+                current_user_data["error_expressions"] = current_error_expressions
+                amount_of_error_expressions = current_user_data.get(
+                    "amount_of_error_expressions",
+                    0
+                )
+                current_user_data[
+                    "amount_of_error_expressions"
+                ] = amount_of_error_expressions + 1
             self.users_db.upsert(current_user_data, Query().user_id == user)
 
     def add_error_expression(self, expression: str) -> None:
@@ -83,3 +116,21 @@ class LogsDB:
             "good_expressions": self._get_good_expressions(),
             "error_expressions": self._get_error_expression(),
         }
+
+    def get_user_error_expressions(
+        self,
+        user: str,
+    ) -> Dict[str, Union[str, int]]:
+        current_user_data = self.users_db.get(Query().user_id == user)
+        response = {
+            "error_expressions": [],
+            "amount_of_error_expressions": 0,
+        }
+        if current_user_data is not None:
+            # That's the first expression for the current user, so create it on DB
+            response["error_expressions"] = current_user_data["error_expressions"]
+            response["amount_of_error_expressions"] = current_user_data[
+                "amount_of_error_expressions"
+            ]
+
+        return response
