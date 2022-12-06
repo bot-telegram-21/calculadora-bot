@@ -21,7 +21,7 @@ from telegram.ext import (
 from logs_db import LogsDB
 
 PERSISTENT_DATA_PATH = ".persistent_data"
-MAX_ERROR_MESSAGES_TO_BLOCK = 15
+MAX_ERROR_MESSAGES_TO_BLOCK = 50
 
 # Enable logging
 logging.basicConfig(
