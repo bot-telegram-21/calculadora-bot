@@ -204,11 +204,11 @@ def process_calculation(update: Update, context: CallbackContext) -> None:
     if update.message is None:
         return
 
-    if not is_private_chat(update):
-        update.message.reply_text(
-            "a calculadora só funciona em mensagem direta/privada"
-        )
-        return
+    # if not is_private_chat(update):
+    #     update.message.reply_text(
+    #         "a calculadora só funciona em mensagem direta/privada"
+    #     )
+    #     return
 
     if is_blocked_user(update):
         return
