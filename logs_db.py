@@ -130,8 +130,8 @@ class LogsDB:
             # That's the first expression for the current user, so create it on DB
             response["error_expressions"] = current_user_data.get(
                 "error_expressions", [])
-            response["amount_of_error_expressions"] = current_user_data[
-                "amount_of_error_expressions"
-            ]
+            response["amount_of_error_expressions"] = current_user_data.get(
+                "amount_of_error_expressions", 0
+            )
 
         return response
