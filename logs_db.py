@@ -128,7 +128,8 @@ class LogsDB:
         }
         if current_user_data is not None:
             # That's the first expression for the current user, so create it on DB
-            response["error_expressions"] = current_user_data["error_expressions"]
+            response["error_expressions"] = current_user_data.get(
+                "error_expressions", [])
             response["amount_of_error_expressions"] = current_user_data[
                 "amount_of_error_expressions"
             ]
